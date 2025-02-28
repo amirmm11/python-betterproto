@@ -1,0 +1,74 @@
+{% if output_file.enums %}{% for enum in output_file.enums %}
+class {{ enum.py_name }}(enum.IntEnum):
+    {% if enum.comment %}
+{{ enum.comment }}
+
+    {% endif %}
+    {% for entry in enum.entries %}
+    {{ entry.name }} = {{ entry.value }}
+        {% if entry.comment %}
+{{ entry.comment }}
+
+        {% endif %}
+    {% endfor %}
+
+{% endfor %}
+{% endif %}
+{% for message in output_file.messages %}
+@dataclasses.dataclass
+class {{ message.py_name }}:
+    {% if message.comment %}
+{{ message.comment }}
+
+    {% endif %}
+    {% for field in message.fields %}
+    {{ field.name }}: {{ field.type_hint }} = {% if field.default %}{{ field.default }}{% else %}None{% endif %}
+        {% if field.comment %}
+{{ field.comment }}
+
+        {% endif %}
+    {% endfor %}
+    {% if not message.fields %}
+    pass
+    {% endif %}
+
+    {% if message.deprecated %}
+    def __post_init__(self) -> None:
+        import warnings
+        warnings.warn("{{ message.py_name }} is deprecated", DeprecationWarning)
+    {%  endif %}
+
+{% endfor %}
+{% for service in output_file.services %}
+class {{ service.py_name }}Stub:
+    """
+    Standard service stub for {{ service.py_name }}.
+    
+    Note: This is a standard class without gRPC functionality.
+    To use gRPC services, use the original betterproto implementation.
+    """
+    
+    {% if service.comment %}
+{{ service.comment }}
+
+    {% elif not service.methods %}
+    pass
+    {% endif %}
+    {% for method in service.methods %}
+    def {{ method.py_name }}(self, {{ method.py_input_message_param }}: "{{ method.py_input_message_type }}") -> "{{ method.py_output_message_type }}":
+        """
+        {{ method.comment }}
+        
+        This is a stub method that does not provide actual gRPC functionality.
+        """
+        raise NotImplementedError("Standard stubs do not implement gRPC methods")
+        
+        {% if method.proto_obj.options.deprecated %}
+        # Note: This method is marked as deprecated
+        {% endif %}
+    {% endfor %}
+{% endfor %}
+
+{% for i in output_file.imports_end %}
+{{ i }}
+{% endfor %}

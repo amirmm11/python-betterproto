@@ -1,0 +1,32 @@
+"""Generated standard Python code for {{ output_file.proto_file_name }}"""
+
+from __future__ import annotations
+
+import dataclasses
+import enum
+from datetime import (
+    datetime,
+    timedelta,
+)
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Union,
+)
+
+{% for i in output_file.imports %}
+{{ i }}
+{% endfor %}
+
+__all__ = [
+    {% for e in output_file.enums %}
+    "{{ e.py_name }}",
+    {% endfor %}
+    {% for m in output_file.messages %}
+    "{{ m.py_name }}",
+    {% endfor %}
+    {% for s in output_file.services %}
+    "{{ s.py_name }}Stub",
+    {% endfor %}
+]

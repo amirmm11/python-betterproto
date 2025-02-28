@@ -44,6 +44,73 @@ This project exists because I am unhappy with the state of the official Google p
 
 This project is a reimplementation from the ground up focused on idiomatic modern Python to help fix some of the above. While it may not be a 1:1 drop-in replacement due to changed method names and call patterns, the wire format is identical.
 
+## Standard Library Mode
+
+Betterproto now supports a "standard library mode" that generates pure Python code using only standard library types (`enum.IntEnum` and `dataclasses`) without the additional serialization, type checking, and runtime logic.
+
+### Why Use Standard Library Mode?
+
+- **Performance**: Faster message creation and attribute access with less overhead
+- **Simplicity**: Clean dataclasses without additional runtime behavior
+- **Compatibility**: Works with any tool that understands standard dataclasses
+- **Memory**: Reduced memory usage by eliminating the runtime metadata
+
+### Usage
+
+When generating code, add the `--std-lib` flag:
+
+```bash
+# Using the betterproto plugin with standard library mode
+protoc --python_betterproto_out=std-lib:./output_dir your.proto
+```
+
+### Limitations
+
+Standard library mode has the following limitations:
+
+1. No built-in wire format serialization/deserialization
+2. No runtime type checking and validation
+3. No implicit conversions (like datetime handling)
+4. No special handling for repeated fields and maps
+
+If you need these features, continue using the default betterproto mode.
+
+### Example
+
+Standard library mode generates code like this:
+
+```python
+import enum
+import dataclasses
+from typing import List, Optional
+
+class Status(enum.IntEnum):
+    UNKNOWN = 0
+    ACTIVE = 1
+
+@dataclasses.dataclass
+class Person:
+    name: str = None
+    age: int = None
+    status: Status = None
+    tags: List[str] = dataclasses.field(default_factory=list)
+```
+
+Instead of betterproto's version:
+
+```python
+class Status(betterproto.Enum):
+    UNKNOWN = 0
+    ACTIVE = 1
+
+@dataclasses.dataclass(eq=False, repr=False)
+class Person(betterproto.Message):
+    name: str = betterproto.string_field(1)
+    age: int = betterproto.int32_field(2)
+    status: Status = betterproto.enum_field(3)
+    tags: List[str] = betterproto.string_field(4, repeated=True)
+```
+
 ## Installation
 
 First, install the package. Note that the `[compiler]` feature flag tells it to install extra dependencies only needed by the `protoc` plugin:
